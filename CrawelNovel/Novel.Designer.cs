@@ -41,7 +41,6 @@ namespace CrawelNovel
             this.txtNovel = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.button1 = new System.Windows.Forms.Button();
             this.btnUpdate = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -133,16 +132,6 @@ namespace CrawelNovel
             this.label5.TabIndex = 12;
             this.label5.Text = "小说名：";
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(79, 49);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 13;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
             // btnUpdate
             // 
             this.btnUpdate.Location = new System.Drawing.Point(470, 51);
@@ -159,7 +148,6 @@ namespace CrawelNovel
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 106);
             this.Controls.Add(this.btnUpdate);
-            this.Controls.Add(this.button1);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.txtNovel);
             this.Controls.Add(this.txtMax);
@@ -191,7 +179,6 @@ namespace CrawelNovel
         private System.Windows.Forms.TextBox txtNovel;
         private System.Windows.Forms.Label label5;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button btnUpdate;
     }
 }

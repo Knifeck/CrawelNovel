@@ -28,6 +28,8 @@ namespace CrawelNovel
         public int CataId = 0;
 
         public HtmlNodeCollection col = null;
+
+        public string CataUrl = string.Empty;
         public Novel()
         {
             InitializeComponent();
@@ -38,6 +40,7 @@ namespace CrawelNovel
 
         private void btnCrawel_Click(object sender, EventArgs e)
         {
+            col = null;
             if (!txtWebSite.Text.IsNotNullOrEmpty())
             {
                 MessageBox.Show("必须输入抓取的网页");
@@ -156,6 +159,17 @@ namespace CrawelNovel
 
             }
             return returnId;
+        }
+
+        public void UpdateCatalog(Catalog cata)
+        {
+            using (CrawelNovelDbContext context = new CrawelNovelDbContext())
+            {
+                context.Catalog.Attach(cata);
+                context.Entry(cata).Property("UpdateTime").IsModified = true;
+                context.SaveChanges();
+            }
+
         }
 
         /// <summary>
@@ -342,15 +356,7 @@ namespace CrawelNovel
             return GetImage(imgUrl);
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            this.backgroundWorker1.DoWork += backgroundWorker1_DoWork;
-            this.backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;
-            this.backgroundWorker1.RunWorkerAsync();  //运行backgroundWorker组件
-            ProgressForm form = new ProgressForm(this.backgroundWorker1);  //显示进度条窗体
-            form.ShowDialog(this);
-            //form.Close();
-        }
+      
 
         //在另一个线程上开始运行(处理进度条)
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
@@ -413,17 +419,143 @@ namespace CrawelNovel
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
+
+            this.backgroundWorker1.DoWork += backgroundWorker1_UpdateDoWork;
+            this.backgroundWorker1.RunWorkerCompleted += this.backgroundWorker1_UpdateRunWorkerCompleted;
+            
+
             List<Catalog> catas = null;
             using(CrawelNovelDbContext context = new CrawelNovelDbContext())
             {
                 catas = context.Catalog.ToList();
             }
-
-            foreach(var cata in catas)
+            HtmlDocument doc = new HtmlDocument();
+            foreach (var cata in catas)
             {
+
+                string htmlContent = GetContent(cata.Url);
+                doc.LoadHtml(htmlContent);
+                HtmlNode navInfo = doc.GetElementbyId("info");
+                HtmlNode navInfo1=doc.DocumentNode.SelectSingleNode(navInfo.XPath + "/p[3]");
+                string LastTime = navInfo1.InnerText.Replace("&nbsp;", "").Replace("最后更新", "").Substring(1);
+                DateTime LastTimeDt = DateTime.Parse(LastTime);
+                if (cata.UpdateTime.HasValue)
+                {
+                    if (LastTimeDt < cata.UpdateTime.Value)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (LastTimeDt < cata.CreateTime)
+                    {
+                        continue;
+                    }
+                }
+
+                UpdateNovel(cata, doc);
+                cata.UpdateTime = DateTime.Now;
+                UpdateCatalog(cata);
 
             }
 
+        }
+
+
+        private void UpdateNovel(Catalog log, HtmlDocument doc)
+        {
+            col = null;
+            using (CrawelNovelDbContext context = new CrawelNovelDbContext())
+            {
+                string MaxUrl = context.Chapter.Where(c=>c.NoteBookId.Equals(log.Id)).Max(c => c.ChapterUrl);
+                var chap = context.Chapter.FirstOrDefault(f => f.ChapterUrl.Equals(MaxUrl));
+                col = doc.DocumentNode.SelectNodes("//dd");
+                ProgressCount = col.Count;
+                CataUrl = log.Url;
+                CataId = log.Id;
+                this.backgroundWorker1.RunWorkerAsync(chap);  //运行backgroundWorker组件
+            }
+            
+
+
+            
+
+            
+            ProgressForm form = new ProgressForm(this.backgroundWorker1);  //显示进度条窗体
+            form.ShowDialog(this);
+
+        }
+
+        private void backgroundWorker1_UpdateDoWork(object sender, DoWorkEventArgs e)
+        {
+            Chapter chapMax = e.Argument as Chapter;
+            BackgroundWorker worker = sender as BackgroundWorker;
+            List<Chapter> chaps = new List<Chapter>();
+            int Count = 1;
+
+            foreach (var node in col)
+            {
+                Count++;
+                worker.ReportProgress(Count * 100 / col.Count);
+                if (worker.CancellationPending) //获取程序是否已请求取消后台操作
+                {
+                    e.Cancel = true;
+                    break;
+                }
+                Chapter chap = new Chapter();
+                chap.ChapterName = node.InnerText;
+                var atag = node.ChildNodes;
+                chap.ChapterUrl = atag[0].Attributes["href"].Value;
+                if (string.Compare(chapMax.ChapterUrl,chap.ChapterUrl,true)>0)
+                {
+                    continue;
+                }
+
+                if (chapMax.ChapterUrl.Equals(chap.ChapterUrl))
+                {
+                    continue;
+                }
+
+                chap.IsFinished = true;
+                chap.NoteBookId = CataId;
+                chap.CreateTime = DateTime.Now;
+                
+                string chapCont = GetContentWait(CataUrl+chap.ChapterUrl, Int32.Parse(txtMin.Text), Int32.Parse(txtMax.Text));
+                if (chapCont.IsNotNullOrEmpty())
+                {
+                    HtmlDocument docNew = new HtmlDocument();
+                    docNew.LoadHtml(chapCont);
+                    HtmlNode navNode = docNew.GetElementbyId("content");
+                    chap.ChapterContent = navNode.InnerText.Replace("&nbsp;", "").Replace("<br/>", "").Replace("\r", "").Replace("\n", "");
+                    chaps.Add(chap);
+                }
+                else
+                {
+                    chap.IsFinished = false;
+                    chaps.Add(chap);
+                }
+
+            }
+
+            SaveChapData(chaps);
+
+        }
+
+        private void backgroundWorker1_UpdateRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                MessageBox.Show(e.Error.Message);
+            }
+            else if (e.Cancelled)
+            {
+                MessageBox.Show("取消");
+            }
+            else
+            {
+                MessageBox.Show("完成");
+            }
         }
     }
 }
