@@ -24,5 +24,7 @@ namespace CrawelNovel.Manage
                 return context.Chapter.Where(c => c.NoteBookId.Equals(NovelId)).ToList();
             }
         }
+
+      
     }
 }

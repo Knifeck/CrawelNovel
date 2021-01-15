@@ -40,6 +40,8 @@ namespace CrawelNovel
 
         private void btnCrawel_Click(object sender, EventArgs e)
         {
+            this.backgroundWorker1.DoWork -= backgroundWorker1_UpdateDoWork;
+            this.backgroundWorker1.RunWorkerCompleted -= backgroundWorker1_UpdateRunWorkerCompleted;
             col = null;
             if (!txtWebSite.Text.IsNotNullOrEmpty())
             {
@@ -56,6 +58,14 @@ namespace CrawelNovel
             
 
             log.NoteName = navFM.ChildNodes[1].Attributes["alt"].Value;
+
+            if (CheckIfExitNovelName(log.NoteName))
+            {
+                MessageBox.Show("数据库已存在该小说");
+                return;
+            }
+
+
             string search = log.NoteName.UrlEncode(Encoding.UTF8);
 
 
@@ -419,7 +429,8 @@ namespace CrawelNovel
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-
+            this.backgroundWorker1.DoWork -= backgroundWorker1_DoWork;
+            this.backgroundWorker1.RunWorkerCompleted -= backgroundWorker1_RunWorkerCompleted;
             this.backgroundWorker1.DoWork += backgroundWorker1_UpdateDoWork;
             this.backgroundWorker1.RunWorkerCompleted += this.backgroundWorker1_UpdateRunWorkerCompleted;
             
@@ -556,6 +567,12 @@ namespace CrawelNovel
             {
                 MessageBox.Show("完成");
             }
+        }
+
+        private bool CheckIfExitNovelName(string Name)
+        {
+            DbManage manage = new DbManage();
+            return manage.GetCataLogByName(Name) != null;
         }
     }
 }

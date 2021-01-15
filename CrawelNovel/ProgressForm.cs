@@ -26,6 +26,11 @@ namespace CrawelNovel
         }
         void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
+            if (e.ProgressPercentage > 100)
+            {
+                this.progressBar1.Value = 100;
+                return;
+            }
             this.progressBar1.Value = e.ProgressPercentage;  //获取异步任务的进度百分比
         }
 
