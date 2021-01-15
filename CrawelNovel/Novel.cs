@@ -30,11 +30,14 @@ namespace CrawelNovel
         public HtmlNodeCollection col = null;
 
         public string CataUrl = string.Empty;
+
+        string JpxsAddress = "https://www.jpxs.org";
         public Novel()
         {
             InitializeComponent();
             this.backgroundWorker1.WorkerReportsProgress = true;  //设置能报告进度更新
             this.backgroundWorker1.WorkerSupportsCancellation = true;  //设置支持异步取消
+            this.rbBQG.Checked = true;
 
         }
 
@@ -49,13 +52,28 @@ namespace CrawelNovel
                 return;
             }
 
+            if (this.rbBQG.Checked)
+            {
+                CrawBqgWebSite();
+            }
+
+            if (this.rbJPXS.Checked)
+            {
+                CrawJpxsWebSite();
+            }
+
+
+        }
+
+        private void CrawBqgWebSite()
+        {
             string htmlContent = GetContent(txtWebSite.Text);
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(htmlContent);
             Catalog log = new Catalog();
             HtmlNode navFM = doc.GetElementbyId("fmimg");
             string ImgUrl = navFM.ChildNodes[1].Attributes["src"].Value;
-            
+
 
             log.NoteName = navFM.ChildNodes[1].Attributes["alt"].Value;
 
@@ -77,7 +95,7 @@ namespace CrawelNovel
             txtNovel.Text = log.NoteName;
             col = doc.DocumentNode.SelectNodes("//dd");
             //Parser parser = new Parser(urls);
-            
+
             ProgressCount = col.Count;
 
             this.backgroundWorker1.DoWork += backgroundWorker1_DoWork;
@@ -85,9 +103,43 @@ namespace CrawelNovel
             this.backgroundWorker1.RunWorkerAsync();  //运行backgroundWorker组件
             ProgressForm form = new ProgressForm(this.backgroundWorker1);  //显示进度条窗体
             form.ShowDialog(this);
+        }
 
 
+        private void CrawJpxsWebSite()
+        {
+            string htmlContent = GetContent(txtWebSite.Text);
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(htmlContent);
+            Catalog log = new Catalog();
+            HtmlNode navFM = doc.GetElementbyId("fmimg");
+            string ImgUrl = navFM.ChildNodes[0].Attributes["src"].Value;
 
+            log.NoteName = navFM.ChildNodes[0].Attributes["alt"].Value.UrlDecode();
+
+            if (CheckIfExitNovelName(log.NoteName))
+            {
+                MessageBox.Show("数据库已存在该小说");
+                return;
+            }
+            log.Img = GetImage(JpxsAddress + ImgUrl);
+            log.CreateTime = DateTime.Now;
+            log.Url = txtWebSite.Text;
+            col = doc.DocumentNode.SelectNodes("//dd");
+            col.RemoveAt(0);
+            col.RemoveAt(col.Count-1);
+            CataId = SaveCatalog(log);
+            txtNovel.Text = log.NoteName;
+           
+            //Parser parser = new Parser(urls);
+
+            ProgressCount = col.Count;
+
+            this.backgroundWorker1.DoWork += backgroundWorker1_DoWork;
+            this.backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;
+            this.backgroundWorker1.RunWorkerAsync();  //运行backgroundWorker组件
+            ProgressForm form = new ProgressForm(this.backgroundWorker1);  //显示进度条窗体
+            form.ShowDialog(this);
         }
 
         
@@ -205,6 +257,15 @@ namespace CrawelNovel
 
             try
             {
+                Encoding encode = Encoding.Default;
+                if (rbBQG.Checked)
+                {
+                    encode = Encoding.UTF8;
+                }
+                if (rbJPXS.Checked)
+                {
+                    encode = Encoding.GetEncoding("gb2312");
+                }
                 HttpWebResponse httpResponse = (HttpWebResponse)httpRequest.GetResponse();
                 if (httpResponse.ContentEncoding.ToLower() == "gzip")  // 如果使用了GZip则先解压
                 {
@@ -212,7 +273,7 @@ namespace CrawelNovel
                     {
                         using (var Zip_Stream = new GZipStream(Stream_Receive, CompressionMode.Decompress))
                         {
-                            using (StreamReader Stream_Reader = new StreamReader(Zip_Stream, Encoding.UTF8))
+                            using (StreamReader Stream_Reader = new StreamReader(Zip_Stream, encode))
                             {
                                 content = Stream_Reader.ReadToEnd();
                             }
@@ -223,7 +284,7 @@ namespace CrawelNovel
                 {
                     using (Stream Stream_Receive = httpResponse.GetResponseStream())
                     {
-                        using (StreamReader Stream_Reader = new StreamReader(Stream_Receive, Encoding.Default))
+                        using (StreamReader Stream_Reader = new StreamReader(Stream_Receive, encode))
                         {
                             content = Stream_Reader.ReadToEnd();
                         }
@@ -239,7 +300,6 @@ namespace CrawelNovel
 
 
         }
-
 
         /// <summary>
         /// 获取指定图片转换成Byte字节信息
@@ -317,6 +377,15 @@ namespace CrawelNovel
 
             try
             {
+                Encoding encode = Encoding.Default;
+                if (rbBQG.Checked)
+                {
+                    encode = Encoding.UTF8;
+                }
+                if (rbJPXS.Checked)
+                {
+                    encode = Encoding.GetEncoding("gb2312");
+                }
                 HttpWebResponse httpResponse = (HttpWebResponse)httpRequest.GetResponse();
                 if (httpResponse.ContentEncoding.ToLower() == "gzip")  // 如果使用了GZip则先解压
                 {
@@ -324,7 +393,7 @@ namespace CrawelNovel
                     {
                         using (var Zip_Stream = new GZipStream(Stream_Receive, CompressionMode.Decompress))
                         {
-                            using (StreamReader Stream_Reader = new StreamReader(Zip_Stream, Encoding.UTF8))
+                            using (StreamReader Stream_Reader = new StreamReader(Zip_Stream, encode))
                             {
                                 content = Stream_Reader.ReadToEnd();
                             }
@@ -335,7 +404,7 @@ namespace CrawelNovel
                 {
                     using (Stream Stream_Receive = httpResponse.GetResponseStream())
                     {
-                        using (StreamReader Stream_Reader = new StreamReader(Stream_Receive, Encoding.Default))
+                        using (StreamReader Stream_Reader = new StreamReader(Stream_Receive, encode))
                         {
                             content = Stream_Reader.ReadToEnd();
                         }
@@ -390,7 +459,19 @@ namespace CrawelNovel
                 chap.IsFinished = true;
                 chap.NoteBookId = CataId;
                 chap.CreateTime = DateTime.Now;
-                string chapCont = GetContentWait(txtWebSite.Text + chap.ChapterUrl, Int32.Parse(txtMin.Text), Int32.Parse(txtMax.Text));
+
+                string ContUrl = string.Empty;
+                if (rbBQG.Checked)
+                {
+                    ContUrl = txtWebSite.Text + chap.ChapterUrl;
+                }
+
+                if (rbJPXS.Checked)
+                {
+                    ContUrl = JpxsAddress + chap.ChapterUrl;
+                }
+
+                string chapCont = GetContentWait(ContUrl, Int32.Parse(txtMin.Text), Int32.Parse(txtMax.Text));
                 if (chapCont.IsNotNullOrEmpty())
                 {
                     HtmlDocument docNew = new HtmlDocument();
@@ -443,13 +524,35 @@ namespace CrawelNovel
             HtmlDocument doc = new HtmlDocument();
             foreach (var cata in catas)
             {
+                if (cata.Url.Contains("jpxs"))
+                {
+                    rbJPXS.Checked = true;
+                }
+                else
+                {
+                    rbBQG.Checked = true;
+                }
 
                 string htmlContent = GetContent(cata.Url);
                 doc.LoadHtml(htmlContent);
-                HtmlNode navInfo = doc.GetElementbyId("info");
-                HtmlNode navInfo1=doc.DocumentNode.SelectSingleNode(navInfo.XPath + "/p[3]");
-                string LastTime = navInfo1.InnerText.Replace("&nbsp;", "").Replace("最后更新", "").Substring(1);
-                DateTime LastTimeDt = DateTime.Parse(LastTime);
+                DateTime LastTimeDt;
+                if (rbBQG.Checked)
+                {
+                    HtmlNode navInfo = doc.GetElementbyId("info");
+                    HtmlNode navInfo1 = doc.DocumentNode.SelectSingleNode(navInfo.XPath + "/p[3]");
+                    string LastTime = navInfo1.InnerText.Replace("&nbsp;", "").Replace("最后更新", "").Substring(1);
+                    LastTimeDt = DateTime.Parse(LastTime);
+                }
+                else
+                {
+                    HtmlNode navInfo = doc.GetElementbyId("info");
+                    HtmlNode navInfo1 = doc.DocumentNode.SelectSingleNode(navInfo.XPath + "/p[4]");
+                    int StartIndex = navInfo1.InnerText.IndexOf('[');
+                    int LastIndex = navInfo1.InnerText.IndexOf(']');
+                    string LastTime = navInfo1.InnerText.Substring(StartIndex,LastIndex-StartIndex).Replace("&nbsp;", "").Replace("最后更新", "").Substring(1);
+                    LastTimeDt = DateTime.Parse(LastTime);
+                }
+                
                 if (cata.UpdateTime.HasValue)
                 {
                     if (LastTimeDt < cata.UpdateTime.Value)
@@ -482,6 +585,12 @@ namespace CrawelNovel
                 string MaxUrl = context.Chapter.Where(c=>c.NoteBookId.Equals(log.Id)).Max(c => c.ChapterUrl);
                 var chap = context.Chapter.FirstOrDefault(f => f.ChapterUrl.Equals(MaxUrl));
                 col = doc.DocumentNode.SelectNodes("//dd");
+                if (rbJPXS.Checked)
+                {
+                    col.RemoveAt(0);
+                    col.RemoveAt(col.Count - 1);
+
+                }
                 ProgressCount = col.Count;
                 CataUrl = log.Url;
                 CataId = log.Id;

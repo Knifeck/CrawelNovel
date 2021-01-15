@@ -42,6 +42,8 @@ namespace CrawelNovel
             this.label5 = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.btnUpdate = new System.Windows.Forms.Button();
+            this.rbBQG = new System.Windows.Forms.RadioButton();
+            this.rbJPXS = new System.Windows.Forms.RadioButton();
             this.SuspendLayout();
             // 
             // txtWebSite
@@ -142,11 +144,35 @@ namespace CrawelNovel
             this.btnUpdate.UseVisualStyleBackColor = true;
             this.btnUpdate.Click += new System.EventHandler(this.btnUpdate_Click);
             // 
+            // rbBQG
+            // 
+            this.rbBQG.AutoSize = true;
+            this.rbBQG.Location = new System.Drawing.Point(16, 54);
+            this.rbBQG.Name = "rbBQG";
+            this.rbBQG.Size = new System.Drawing.Size(59, 16);
+            this.rbBQG.TabIndex = 15;
+            this.rbBQG.TabStop = true;
+            this.rbBQG.Text = "笔趣阁";
+            this.rbBQG.UseVisualStyleBackColor = true;
+            // 
+            // rbJPXS
+            // 
+            this.rbJPXS.AutoSize = true;
+            this.rbJPXS.Location = new System.Drawing.Point(82, 54);
+            this.rbJPXS.Name = "rbJPXS";
+            this.rbJPXS.Size = new System.Drawing.Size(71, 16);
+            this.rbJPXS.TabIndex = 16;
+            this.rbJPXS.TabStop = true;
+            this.rbJPXS.Text = "精品小说";
+            this.rbJPXS.UseVisualStyleBackColor = true;
+            // 
             // Novel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 106);
+            this.ClientSize = new System.Drawing.Size(800, 210);
+            this.Controls.Add(this.rbJPXS);
+            this.Controls.Add(this.rbBQG);
             this.Controls.Add(this.btnUpdate);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.txtNovel);
@@ -180,5 +206,7 @@ namespace CrawelNovel
         private System.Windows.Forms.Label label5;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.RadioButton rbBQG;
+        private System.Windows.Forms.RadioButton rbJPXS;
     }
 }
