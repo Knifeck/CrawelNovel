@@ -582,7 +582,16 @@ namespace CrawelNovel
             col = null;
             using (CrawelNovelDbContext context = new CrawelNovelDbContext())
             {
-                string MaxUrl = context.Chapter.Where(c=>c.NoteBookId.Equals(log.Id)).Max(c => c.ChapterUrl);
+                string MaxUrl = string.Empty;
+                if (rbBQG.Checked)
+                {
+                    MaxUrl = context.Chapter.Where(c => c.NoteBookId.Equals(log.Id)).Max(c => c.ChapterUrl);
+                }
+                else
+                {
+                    MaxUrl = context.Chapter.Where(c => c.NoteBookId.Equals(log.Id)).Min(c => c.ChapterUrl);
+                }
+                
                 var chap = context.Chapter.FirstOrDefault(f => f.ChapterUrl.Equals(MaxUrl));
                 col = doc.DocumentNode.SelectNodes("//dd");
                 if (rbJPXS.Checked)
@@ -627,21 +636,47 @@ namespace CrawelNovel
                 chap.ChapterName = node.InnerText;
                 var atag = node.ChildNodes;
                 chap.ChapterUrl = atag[0].Attributes["href"].Value;
-                if (string.Compare(chapMax.ChapterUrl,chap.ChapterUrl,true)>0)
-                {
-                    continue;
-                }
 
-                if (chapMax.ChapterUrl.Equals(chap.ChapterUrl))
+                if (rbBQG.Checked)
                 {
-                    continue;
+                    if (string.Compare(chapMax.ChapterUrl, chap.ChapterUrl, true) > 0)
+                    {
+                        continue;
+                    }
+
+                    if (chapMax.ChapterUrl.Equals(chap.ChapterUrl))
+                    {
+                        continue;
+                    }
                 }
+                else
+                {
+                    if (string.Compare(chapMax.ChapterUrl, chap.ChapterUrl, true) < 0)
+                    {
+                        continue;
+                    }
+
+                    if (chapMax.ChapterUrl.Equals(chap.ChapterUrl))
+                    {
+                        continue;
+                    }
+                }
+                
 
                 chap.IsFinished = true;
                 chap.NoteBookId = CataId;
                 chap.CreateTime = DateTime.Now;
-                
-                string chapCont = GetContentWait(CataUrl+chap.ChapterUrl, Int32.Parse(txtMin.Text), Int32.Parse(txtMax.Text));
+                string ContUrl = string.Empty;
+                if (rbBQG.Checked)
+                {
+                    ContUrl = CataUrl + chap.ChapterUrl;
+                }
+
+                if (rbJPXS.Checked)
+                {
+                    ContUrl = JpxsAddress + chap.ChapterUrl;
+                }
+                string chapCont = GetContentWait(ContUrl, Int32.Parse(txtMin.Text), Int32.Parse(txtMax.Text));
                 if (chapCont.IsNotNullOrEmpty())
                 {
                     HtmlDocument docNew = new HtmlDocument();
