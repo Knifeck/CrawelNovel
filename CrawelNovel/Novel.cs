@@ -182,7 +182,7 @@ namespace CrawelNovel
             var chaps = manage.GetChapterList(catalog.Id);
             foreach(var chap in chaps)
             {
-                String page = page_template.Replace("%%CONTENT%%", chap.ChapterName+ "<br />" +chap.ChapterContent);
+                String page = page_template.Replace("%%CONTENT%%", chap.ChapterName+ "<br />" +chap.ChapterContent.Replace("\r\n","<br />")).Replace("<br /><br />","");
                 String pageName = String.Format("page{0}.xhtml", pageCounter);
                 epub.AddXhtmlData(pageName, page);
                 epub.AddNavPoint(chap.ChapterName, pageName, navCounter++);
@@ -477,7 +477,7 @@ namespace CrawelNovel
                     HtmlDocument docNew = new HtmlDocument();
                     docNew.LoadHtml(chapCont);
                     HtmlNode navNode = docNew.GetElementbyId("content");
-                    chap.ChapterContent = navNode.InnerText.Replace("&nbsp;", "").Replace("<br/>", "").Replace("\r", "").Replace("\n", "");
+                    chap.ChapterContent = navNode.InnerText.Replace("&nbsp;&nbsp;&nbsp;&nbsp;", "\r\n").Replace("<br/>", "\r\n").Replace("&nbsp;","");
                     chaps.Add(chap);
                 }
                 else
@@ -682,7 +682,7 @@ namespace CrawelNovel
                     HtmlDocument docNew = new HtmlDocument();
                     docNew.LoadHtml(chapCont);
                     HtmlNode navNode = docNew.GetElementbyId("content");
-                    chap.ChapterContent = navNode.InnerText.Replace("&nbsp;", "").Replace("<br/>", "").Replace("\r", "").Replace("\n", "");
+                    chap.ChapterContent = navNode.InnerText.Replace("&nbsp;&nbsp;&nbsp;&nbsp;", "\r\n ").Replace("<br/>", "\r\n").Replace("&nbsp;", "");
                     chaps.Add(chap);
                 }
                 else
